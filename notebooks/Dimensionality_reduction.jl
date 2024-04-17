@@ -62,6 +62,9 @@ begin
 	df_expr = nothing
 end
 
+# ╔═╡ 5524ba5a-15b0-4f9b-b33e-e8ada27eaeef
+nnz(counts)  / prod(size(counts))
+
 # ╔═╡ 4d5b6a30-9b89-494b-b4ec-b7c80078df27
 md"
 Read the gene annotation;
@@ -92,33 +95,39 @@ We start by computing the library depth per million for each cell as it will be 
 # ╔═╡ 457a67ef-22d8-4e7b-b3ff-50bf071f7850
 libraryDepth = sum(counts, dims=1) / 1e6;
 
-# ╔═╡ 414accfb-861d-4361-860c-6ab8b50a611e
-t = 32;
+# ╔═╡ 8fa30134-6b07-4bb5-a155-a7b70f40218a
+histogram(libraryDepth)
+
+# ╔═╡ b29d6140-c74f-47f7-82fb-36e1691f2d66
+
 
 # ╔═╡ 7437fb10-9a0a-4ef7-89c4-b939f783255f
 md"""
 ### Feature selection
 
-We say a gene has non-zero expression in a cell if the count is at least ``t=`` $(32). In our data all count values less than $(t) have already been removed.
+We say a gene has non-zero expression in a cell if the count is at least ``t=32``.  The preprocessing script for our data has already removed all count values less than ``t`` and all genes that have non-zero expression in less than 10 cells. Hence we can use zero as the threshold in our calculations, which is fast due to the `counts` matrix being represented as a a sparse matrix.
 """
 
-# ╔═╡ e1c71a60-696e-4523-a5d3-de7cd5c431c2
-md"Compute the fraction of cells with (near-)zero (less than ``t=``$(t)) counts and the mean log non-zero expressionfor each gene. First compute the number of cells with non-zero counts:"
-
-# ╔═╡ d695a1a3-7109-40c6-99d1-21924023a682
-n = vec(sum(counts .> 0, dims=2))
-
-# ╔═╡ e474774a-f85a-4e40-81f4-8779a24b786c
-md"The fraction of cells with (near-) zero counts is obtained as:"
+# ╔═╡ c68e367d-8788-44f5-af03-af14e533ad8f
+md"The total number of cells in our data is:"
 
 # ╔═╡ 4112422d-7472-40ea-8a1e-6a2cb66d1776
 ncell = size(counts,2)
 
+# ╔═╡ e1c71a60-696e-4523-a5d3-de7cd5c431c2
+md"Compute the number of cells with non-zero counts for each gene:"
+
+# ╔═╡ d695a1a3-7109-40c6-99d1-21924023a682
+n = vec(sum(counts .> 0, dims=2));
+
+# ╔═╡ 48b67b53-4aaf-4f38-b09f-598d98cc549b
+md"The fraction of cells with non-zero counts for each gene is computed as:"
+
 # ╔═╡ d1506893-fe0a-4471-9a8c-03cf2e345a85
-d = 1 .- n./ncell
+d = 1 .- n./ncell;
 
 # ╔═╡ 781d2b01-5d51-46a5-835e-6d023f892993
-md"Now compute the sum of log2-counts over all cells with non-zero counts for each gene, using a function that returns ``log_2(x)`` if an expression count ``x`` is greater than $(t) and zero otherwise, and divide the result by ``n`` elementwise to obtain the mean log non-zero expression for each gene:"
+md"Now compute the sum of log2-counts over all cells with non-zero counts for each gene, using a function that returns ``log_2(x)`` if an expression count ``x`` is greater than zero and zero otherwise, and divide the result by ``n`` elementwise to obtain the mean log non-zero expression for each gene:"
 
 # ╔═╡ 9b4a653f-faa0-41ff-bb7e-b12dba5a7627
 g(x) = x .> 0 ? log2(x) : 0.
@@ -233,6 +242,13 @@ begin
 	f1
 end
 
+# ╔═╡ 3278f614-3009-4cb3-be32-2228e3cc1372
+md"
+### T-SNE
+
+Plot the two t-SNE coordinates against each other:
+"
+
 # ╔═╡ 4eae61e7-b578-4345-8cf7-d0c05a1a5ff2
 begin
 	f2 = scatter(dm_t[:,1],dm_t[:,2],
@@ -251,6 +267,13 @@ begin
 	end
 	f2
 end
+
+# ╔═╡ c6485ac6-665c-4acb-ac45-d3483ca18f94
+md"
+### UMAP
+
+Plot the two UMAP coordinates against each other:
+"
 
 # ╔═╡ 14df6889-48ba-4ed2-aafe-94ee857f6bea
 um1 = dm_u[1,subc];
@@ -287,18 +310,21 @@ end
 # ╠═a55398f6-f9cc-4ba7-adf0-0f1c85405caa
 # ╟─f324e478-11d4-4b9e-a839-0d73d30042ba
 # ╠═c6fabbae-6e90-458c-b121-8615ead04f8a
+# ╠═5524ba5a-15b0-4f9b-b33e-e8ada27eaeef
 # ╟─4d5b6a30-9b89-494b-b4ec-b7c80078df27
 # ╠═3ce46687-f16f-4bdc-a0ad-3c386b2c16d7
 # ╟─6c3fc69c-c29f-44dc-86f9-067ecbd2f990
 # ╠═dfdd9693-e3ef-4371-a7de-c7251c04df35
 # ╟─30c84cf7-2ead-417e-8183-e11530f7a5c9
 # ╠═457a67ef-22d8-4e7b-b3ff-50bf071f7850
+# ╠═8fa30134-6b07-4bb5-a155-a7b70f40218a
+# ╠═b29d6140-c74f-47f7-82fb-36e1691f2d66
 # ╟─7437fb10-9a0a-4ef7-89c4-b939f783255f
-# ╠═414accfb-861d-4361-860c-6ab8b50a611e
+# ╟─c68e367d-8788-44f5-af03-af14e533ad8f
+# ╠═4112422d-7472-40ea-8a1e-6a2cb66d1776
 # ╟─e1c71a60-696e-4523-a5d3-de7cd5c431c2
 # ╠═d695a1a3-7109-40c6-99d1-21924023a682
-# ╟─e474774a-f85a-4e40-81f4-8779a24b786c
-# ╠═4112422d-7472-40ea-8a1e-6a2cb66d1776
+# ╟─48b67b53-4aaf-4f38-b09f-598d98cc549b
 # ╠═d1506893-fe0a-4471-9a8c-03cf2e345a85
 # ╟─781d2b01-5d51-46a5-835e-6d023f892993
 # ╠═9b4a653f-faa0-41ff-bb7e-b12dba5a7627
@@ -321,7 +347,9 @@ end
 # ╠═4a4ea89a-ba7f-43f2-ab72-14bd2b062e48
 # ╠═1a63a434-f623-46f9-aa7b-d7ea0fe47a39
 # ╠═c066bbd7-3c77-4e59-af80-88e561d74185
+# ╟─3278f614-3009-4cb3-be32-2228e3cc1372
 # ╠═4eae61e7-b578-4345-8cf7-d0c05a1a5ff2
+# ╟─c6485ac6-665c-4acb-ac45-d3483ca18f94
 # ╠═14df6889-48ba-4ed2-aafe-94ee857f6bea
 # ╠═48e914dd-f898-46a2-9279-36b365bdef35
 # ╠═14a87a93-c26f-4e24-b294-27be92708d8d

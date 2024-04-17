@@ -1,9 +1,5 @@
 ### A Pluto.jl notebook ###
-<<<<<<< HEAD
-# v0.19.40
-=======
 # v0.19.38
->>>>>>> c80e8a2d08b2e1aa73c249efa4de9ec6c8fd2bf6
 
 using Markdown
 using InteractiveUtils

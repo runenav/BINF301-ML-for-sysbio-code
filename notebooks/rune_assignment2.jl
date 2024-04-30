@@ -11,6 +11,9 @@ begin
 	using Random
 	using DataSets
 	using MLJ
+	using MLJBase
+	using MLJModelInterface
+	using MLJLIBSVMInterface
 end
 
 # ╔═╡ b3b72b00-fc90-11ee-0b6e-eb20749dcb04
@@ -111,14 +114,55 @@ Now, using the same-sized indices for positive and negatives, creating a datafra
 # ╔═╡ 3d60487a-8cbc-4dda-8bf4-f2fbd7751fce
 begin
 	df_genes_predictors = [df_expr[index_pos, :]; df_expr[index_neg, :]];
-	triple_neg_labels = [triple_neg[index_pos]; triple_neg[index_neg]];
+	labels = [triple_neg[index_pos]; triple_neg[index_neg]];
 end
+
+# ╔═╡ 3da92058-f560-4a33-a975-2cd73eec467e
+md"
+Now, marking which indices should be used for training or testing.
+"
 
 # ╔═╡ dc5a5a39-ac6f-4910-92eb-5042f2b74294
 begin
-	train, test = partition(eachindex(triple_neg_labels), 0.8; shuffle=true, rng=98);
-	
+	train, test = partition(eachindex(labels), 0.8; shuffle=true, rng=98);
+end
 
+# ╔═╡ cfa90aa7-8962-4d51-9c1f-3bf9a0f55b7b
+md"
+Loading a Support Vector Machine model.
+"
+
+# ╔═╡ 64462346-b5b8-4925-88f1-6ddab3911a43
+begin
+	SupportVectorClassifier = @load SVC pkg=LIBSVM;
+	svc_type = SupportVectorClassifier();
+end
+
+# ╔═╡ e6ef5951-e1b7-4ff0-8212-8753e06c4495
+md"
+Associating an SVC model with the data. I added 'scitype_check_level=0' to remove a warning message, but I am not sure what to do about the warning.
+"
+
+# ╔═╡ 493335f9-4864-4638-81fd-09feee62dd67
+labels
+
+# ╔═╡ aa855ce0-e21d-4456-b2c4-d12dbbac13e8
+begin
+	# Checking that the data types are usable?
+	println(MLJModelInterface.scitype(labels))
+	println()
+	println(schema(df_genes_predictors))
+end
+
+# ╔═╡ a16f4bb8-ca2e-4f70-9200-3e8d538959ec
+begin
+	svc_model= machine(svc_type, df_genes_predictors, labels) #, scitype_check_level=0);
+end
+
+# ╔═╡ a2eff17e-7595-4346-be17-4d540c1f3086
+begin
+
+	fit!(svc_model, rows=train);
 	
 end
 
@@ -129,6 +173,9 @@ CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataSets = "c9661210-8a83-48f0-b833-72e62abce419"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
+MLJBase = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
+MLJLIBSVMInterface = "61c7150f-6c77-4bb1-949c-13197eac2a52"
+MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
@@ -136,6 +183,9 @@ CSV = "~0.10.14"
 DataFrames = "~1.6.1"
 DataSets = "~0.2.11"
 MLJ = "~0.20.3"
+MLJBase = "~1.2.1"
+MLJLIBSVMInterface = "~0.2.1"
+MLJModelInterface = "~1.9.6"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -144,7 +194,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "5d406ef080fb7c21eb017a6def112465c4783e2a"
+project_hash = "23f144f527eb045c0aa777ea52c49fa9d8addbab"
 
 [[deps.ARFFFiles]]
 deps = ["CategoricalArrays", "Dates", "Parsers", "Tables"]
@@ -590,6 +640,18 @@ version = "0.9.18"
     [deps.KernelAbstractions.weakdeps]
     EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
 
+[[deps.LIBLINEAR]]
+deps = ["Libdl", "SparseArrays", "liblinear_jll"]
+git-tree-sha1 = "81e40115c23acca9dfa30944050096b958271e5a"
+uuid = "2d691ee1-e668-5016-a719-b2531b85e0f5"
+version = "0.6.0"
+
+[[deps.LIBSVM]]
+deps = ["LIBLINEAR", "LinearAlgebra", "ScikitLearnBase", "SparseArrays", "libsvm_jll"]
+git-tree-sha1 = "a5e607649aeb9ae3bbde19dc629faaa3b3d8955d"
+uuid = "b1bec4e5-fd48-53fe-b0cb-9723c09d164b"
+version = "0.8.0"
+
 [[deps.LLVM]]
 deps = ["CEnum", "LLVMExtra_jll", "Libdl", "Preferences", "Printf", "Requires", "Unicode"]
 git-tree-sha1 = "839c82932db86740ae729779e610f07a1640be9a"
@@ -607,6 +669,12 @@ deps = ["Artifacts", "JLLWrappers", "LazyArtifacts", "Libdl", "TOML"]
 git-tree-sha1 = "88b916503aac4fb7f701bb625cd84ca5dd1677bc"
 uuid = "dad2f222-ce93-54a1-a47d-0025e8a3acab"
 version = "0.0.29+0"
+
+[[deps.LLVMOpenMP_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "d986ce2d884d49126836ea94ed5bfb0f12679713"
+uuid = "1d63c593-3942-5779-bab2-d838dc0a180e"
+version = "15.0.7+0"
 
 [[deps.LaTeXStrings]]
 git-tree-sha1 = "50901ebc375ed41dbf8058da26f9de442febbbec"
@@ -730,6 +798,12 @@ deps = ["IterationControl", "MLJBase", "Random", "Serialization"]
 git-tree-sha1 = "1e909ee09417ebd18559c4d9c15febff887192df"
 uuid = "614be32b-d00c-4edb-bd02-1eb411ab5e55"
 version = "0.6.1"
+
+[[deps.MLJLIBSVMInterface]]
+deps = ["CategoricalArrays", "LIBSVM", "MLJModelInterface", "Statistics"]
+git-tree-sha1 = "4a056d2384a906ac2a2d13ed25f9092107f53eb0"
+uuid = "61c7150f-6c77-4bb1-949c-13197eac2a52"
+version = "0.2.1"
 
 [[deps.MLJModelInterface]]
 deps = ["Random", "ScientificTypesBase", "StatisticalTraits"]
@@ -1016,6 +1090,12 @@ git-tree-sha1 = "a8e18eb383b5ecf1b5e6fc237eb39255044fd92b"
 uuid = "30f210dd-8aff-4c5f-94ba-8e64358c1161"
 version = "3.0.0"
 
+[[deps.ScikitLearnBase]]
+deps = ["LinearAlgebra", "Random", "Statistics"]
+git-tree-sha1 = "7877e55c1523a4b336b433da39c8e8c08d2f221f"
+uuid = "6e75b9c4-186b-50bd-896f-2d2496a4843e"
+version = "0.5.0"
+
 [[deps.Scratch]]
 deps = ["Dates"]
 git-tree-sha1 = "3bac05bc7e74a75fd9cba4295cde4045d9fe2386"
@@ -1281,6 +1361,18 @@ deps = ["Artifacts", "Libdl"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
 version = "5.8.0+1"
 
+[[deps.liblinear_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "7f5f1953394b74739eaebd345f4515515a022a5b"
+uuid = "275f1f90-abd2-5ca1-9ad8-abd4e3d66eb7"
+version = "2.47.0+0"
+
+[[deps.libsvm_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LLVMOpenMP_jll", "Libdl", "Pkg"]
+git-tree-sha1 = "7625dde5e9eab416c1cb791627f065ce55297eff"
+uuid = "08558c22-525a-5d2a-acf6-0ac6658ffce4"
+version = "3.25.0+0"
+
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
@@ -1293,7 +1385,7 @@ version = "17.4.0+2"
 """
 
 # ╔═╡ Cell order:
-# ╠═b3b72b00-fc90-11ee-0b6e-eb20749dcb04
+# ╟─b3b72b00-fc90-11ee-0b6e-eb20749dcb04
 # ╟─9a302b44-65d2-420b-a02f-099a7870bbca
 # ╠═b1f92eb9-85c8-4a54-b1fe-85bed8751605
 # ╟─c6ef51fa-cd5f-4920-8279-db4efdafd960
@@ -1305,6 +1397,14 @@ version = "17.4.0+2"
 # ╠═dd675689-3832-4bd4-8d37-3294e34335f3
 # ╟─cf497de4-0c14-4765-95fd-99c5fd8cd63b
 # ╠═3d60487a-8cbc-4dda-8bf4-f2fbd7751fce
+# ╟─3da92058-f560-4a33-a975-2cd73eec467e
 # ╠═dc5a5a39-ac6f-4910-92eb-5042f2b74294
+# ╟─cfa90aa7-8962-4d51-9c1f-3bf9a0f55b7b
+# ╠═64462346-b5b8-4925-88f1-6ddab3911a43
+# ╟─e6ef5951-e1b7-4ff0-8212-8753e06c4495
+# ╠═493335f9-4864-4638-81fd-09feee62dd67
+# ╠═aa855ce0-e21d-4456-b2c4-d12dbbac13e8
+# ╠═a16f4bb8-ca2e-4f70-9200-3e8d538959ec
+# ╠═a2eff17e-7595-4346-be17-4d540c1f3086
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
